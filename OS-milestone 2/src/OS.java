@@ -20,15 +20,14 @@ public class OS {
 	private int clock = 0;
 	private pair[] memory = new pair[40];
 	
-//	private Mutex userInput = new Mutex();
-//	private Mutex userOutput = new Mutex();
-//	private Mutex file = new Mutex();
+	private Mutex userInput = new Mutex();
+	private Mutex userOutput = new Mutex();
+	private Mutex file = new Mutex();
 
 	private Queue<process> readyQueue = new LinkedList<>();
-//	private Queue<process> blockedQueue = new LinkedList<>();
-//	private ArrayList<process> pendingList = new ArrayList<>();
-
-//	private process executingProcess;
+	private Queue<process> blockedQueue = new LinkedList<>();
+	private ArrayList<process> pendingList = new ArrayList<>();
+	private process executingProcess;
 	private SystemCallHandler systemCallHandler = new SystemCallHandler();
 	private Scheduler scheduler = new Scheduler();
 
