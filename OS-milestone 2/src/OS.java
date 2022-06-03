@@ -12,6 +12,8 @@ import java.util.Scanner;
 
 import javax.swing.event.MenuKeyEvent;
 
+import sun.security.provider.DSAKeyPairGenerator.Current;
+
 public class OS {
 	private Scanner sc = new Scanner(System.in);
 	private FileReader fileReader;
@@ -82,25 +84,54 @@ public class OS {
 	}
 
 	public void run() {
+		int startAddress;
 		while (!(readyQueue.isEmpty() && pendingList.isEmpty() && executingPid == -1)) {
-			System.out.println("clock :- " + clock);
-			
-			for (int i = 0; i < pendingList.size(); i++) {
-				if (pendingList.get(i).getTimeOfArrival() == clock) {
-					readyQueue.add(pendingList.get(i).getPid());
-					createInMemory(pendingList.get(i));
-				}
-			}
-			
-			if (!readyQueue.isEmpty()) {
-				if (executingPid != -1) {
-					readyQueue.add(executingPid);
-				}
-				executingPid = readyQueue.remove();
-			}
+			startAddress = scheduler.schedule(this);
+//			for (int i = 0; i < pendingList.size(); i++) {
+//				if (pendingList.get(i).getTimeOfArrival() == clock) {
+//					readyQueue.add(pendingList.get(i).getPid());
+//					createInMemory(pendingList.get(i));
+//				}
+//			}
+//			
+//			if (!readyQueue.isEmpty()) {
+//				if (executingPid != -1) {
+//					readyQueue.add(executingPid);
+//				}
+//				executingPid = readyQueue.remove();
+//			}
 			if (executingPid != -1) {
 
-//				
+				int quantum = timeSlice;
+				String[] currentInstruction;
+				int realPC;
+				while (quantum > 0
+						&& (int) memory[startAddress + 2].getValue() <= (int) memory[startAddress + 4].getValue()) {
+					
+					System.out.println("Clock cycle:- " + clock);
+					realPC = startAddress + 8 + (int) memory[startAddress + 2].getValue();
+					currentInstruction = ((String) memory[realPC].getValue()).split(" ");
+					System.out.println("Currently executing instruction " + memory[startAddress + 2].getValue() + " :"
+							+ currentInstruction);
+					
+					
+					if (currentInstruction[0].equals("assign")) {
+						for (int i = startAddress + 5; i < startAddress + 8; i++) {
+							if (memory[i].getValue().equals("<empty variable slot>")) {
+								memory[i].setKey(currentInstruction[1]);
+								memory[i].setValue("Dummy value");
+								break;
+							}
+						}
+					}
+					
+					
+					
+					memory[startAddress + 2].increment();
+					clock++;
+					quantum--;
+					
+				}
 //				StringBuffer sb = new StringBuffer(executingProcess.getName());
 //				sb.deleteCharAt(sb.length() - 1);
 //				sb.deleteCharAt(sb.length() - 1);
@@ -132,7 +163,6 @@ public class OS {
 			} else {
 				System.out.println("No process currently executing");
 			}
-			clock++;
 			System.out.println("--------------------------------------------------");
 		}
 	}
@@ -171,9 +201,15 @@ public class OS {
 		} else if (memory[21].getValue() == "running") {
 			moveBlockFromToDisk(false, 0);
 			createInMemoryHelper(0, process);
+			System.out.println("Process id " + memory[0].getValue() + " is created in memory");
+		} else {
+			moveBlockFromToDisk(false, 20);
+			createInMemoryHelper(20, process);
+			System.out.println("Process id " + memory[20].getValue() + " is created in memory");
 		}
 	}
-	public void createInMemoryHelper(int start,process process) {
+
+	public void createInMemoryHelper(int start, process process) {
 		memory[start] = new pair("PID : ", process.getPid());
 		memory[start + 1] = new pair("process state : ", "ready on memory");
 		memory[start + 2] = new pair("PC : ", process.getPc());
@@ -192,8 +228,9 @@ public class OS {
 		try {
 			String swappedProcess = "";
 			int i = start;
+			System.out.println("Process id " + memory[start].getValue() + " is swapped to disk");
 			// putting the memory block in a string to write it on disk later
-			while (memory[i] != null && i<20) {
+			while (memory[i] != null && i < start + 20) {
 				if (i == 1 || i == 21) {
 					memory[i].setValue("ready on disk");
 				}
@@ -201,8 +238,9 @@ public class OS {
 				memory[i] = null;
 				i++;
 			}
-			
-			//if the swap variable is passed as true then the disk isnt empty so we move what's on disk to the memory starting from the start variable
+
+			// if the swap variable is passed as true then the disk isn't empty so we move
+			// what's on disk to the memory starting from the start variable
 			if (swap) {
 				int j = start;
 				fileReader = new FileReader("disk.txt");
@@ -215,6 +253,7 @@ public class OS {
 						memory[j].setValue("ready on memory");
 					}
 				}
+				System.out.println("Process id " + memory[start].getValue() + " is swapped to memory");
 			}
 
 			systemCallHandler.writeFile("disk.txt", swappedProcess);
@@ -347,28 +386,28 @@ public class OS {
 		this.readyQueue = readyQueue;
 	}
 
-//	public Queue<process> getBlockedQueue() {
-//		return blockedQueue;
-//	}
-//
-//	public void setBlockedQueue(Queue<process> blockedQueue) {
-//		this.blockedQueue = blockedQueue;
-//	}
-//
-//	public ArrayList<process> getPendingList() {
-//		return pendingList;
-//	}
-//
-//	public void setPendingList(ArrayList<process> pendingList) {
-//		this.pendingList = pendingList;
-//	}
-//
-//	public process getExecutingProcess() {
-//		return executingProcess;
-//	}
-//
-//	public void setExecutingProcess(process executingProcess) {
-//		this.executingProcess = executingProcess;
-//	}
+	public ArrayList<process> getPendingList() {
+		return pendingList;
+	}
+
+	public void setPendingList(ArrayList<process> pendingList) {
+		this.pendingList = pendingList;
+	}
+
+	public pair[] getMemory() {
+		return memory;
+	}
+
+	public void setMemory(pair[] memory) {
+		this.memory = memory;
+	}
+
+	public int getExecutingPid() {
+		return executingPid;
+	}
+
+	public void setExecutingPid(int executingPid) {
+		this.executingPid = executingPid;
+	}
 
 }

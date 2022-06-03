@@ -23,6 +23,9 @@ public class pair {
 	public void setValue(Object value) {
 		this.value = value;
 	}
+	public void increment() {
+		value = (int)value +1;
+	}
 	
 	
 	
