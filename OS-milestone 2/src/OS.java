@@ -10,9 +10,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
 
-import javax.swing.event.MenuKeyEvent;
-
-import sun.security.provider.DSAKeyPairGenerator.Current;
 
 public class OS {
 	private Scanner sc = new Scanner(System.in);
@@ -112,13 +109,13 @@ public class OS {
 					realPC = startAddress + 8 + (int) memory[startAddress + 2].getValue();
 					currentInstruction = ((String) memory[realPC].getValue()).split(" ");
 					System.out.println("Currently executing instruction " + memory[startAddress + 2].getValue() + " :"
-							+ currentInstruction);
+							+ String.join(" ", currentInstruction));
 					
 					
 					if (currentInstruction[0].equals("assign")) {
 						for (int i = startAddress + 5; i < startAddress + 8; i++) {
 							if (memory[i].getValue().equals("<empty variable slot>")) {
-								memory[i].setKey(currentInstruction[1]);
+								memory[i].setKey(currentInstruction[1]+ " : ");
 								memory[i].setValue("Dummy value");
 								break;
 							}
@@ -126,11 +123,16 @@ public class OS {
 					}
 					
 					
-					
 					memory[startAddress + 2].increment();
 					clock++;
 					quantum--;
-					
+					System.out.println("--------------------------------------");
+					System.out.println("MEMORY CONTENT");
+					for (int i = 0; i < memory.length; i++) {
+						
+						
+						System.out.println("memory[" + i + "] = " + memory[i].getKey() + memory[i].getValue());
+					}
 				}
 //				StringBuffer sb = new StringBuffer(executingProcess.getName());
 //				sb.deleteCharAt(sb.length() - 1);
@@ -215,9 +217,9 @@ public class OS {
 		memory[start + 2] = new pair("PC : ", process.getPc());
 		memory[start + 3] = new pair("starts at address : ", 0);
 		memory[start + 4] = new pair("ends at address : ", (start + 7 + process.getInstructions().size()));
-		memory[start + 5] = new pair("<empty variable slot>", "");
-		memory[start + 6] = new pair("<empty variable slot>", "");
-		memory[start + 7] = new pair("<empty variable slot>", "");
+		memory[start + 5] = new pair("<empty variable slot> ", "");
+		memory[start + 6] = new pair("<empty variable slot> ", "");
+		memory[start + 7] = new pair("<empty variable slot> ", "");
 		for (int i = 0; i < process.getInstructions().size(); i++) {
 			memory[start + 8 + i] = new pair("instruction " + i + " : ",
 					String.join(" ", process.getInstructions().get(i)));
