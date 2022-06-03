@@ -24,7 +24,7 @@ public class pair {
 		this.value = value;
 	}
 	public void increment() {
-		value = (int)value +1;
+		value = Integer.toString(Integer.parseInt((String) value) +1);
 	}
 	
 	

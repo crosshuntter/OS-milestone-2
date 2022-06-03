@@ -6,26 +6,22 @@ public class Scheduler {
 	//returns executingPid
 	public int schedule(OS os) {
 		int oldExecutingPid = os.getExecutingPid();
-		for (int i = 0; i < os.getPendingList().size(); i++) {
-			if (os.getPendingList().get(i).getTimeOfArrival() == os.getClock()) {
-				os.getReadyQueue().add(os.getPendingList().get(i).getPid());
-				os.createInMemory(os.getPendingList().get(i));
-			}
-		}
+		
 
 		if (!os.getReadyQueue().isEmpty()) {
 			if (os.getExecutingPid() != -1) {
 				os.getReadyQueue().add(os.getExecutingPid());
 			}
 			os.setExecutingPid(os.getReadyQueue().remove());
+
 		}
 		
-		if (os.getExecutingPid() == (int)os.getMemory()[0].getValue()) {
+		if (os.getExecutingPid() == Integer.parseInt((String)os.getMemory()[0].getValue())) {
 			return 0;
-		}else if (os.getExecutingPid() == (int)os.getMemory()[20].getValue()) {
+		}else if (os.getExecutingPid() == Integer.parseInt((String)os.getMemory()[20].getValue())) {
 			return 20;
 		}else {
-			if(oldExecutingPid == (int)os.getMemory()[0].getValue()) {
+			if(oldExecutingPid == Integer.parseInt((String)os.getMemory()[0].getValue())) {
 				os.moveBlockFromToDisk(true, 0);
 				return 0;
 			}

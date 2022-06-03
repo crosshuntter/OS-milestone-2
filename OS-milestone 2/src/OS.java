@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
 
-
 public class OS {
 	private Scanner sc = new Scanner(System.in);
 	private FileReader fileReader;
@@ -45,45 +44,52 @@ public class OS {
 
 	public void initialize() {
 
-		String choice;
+//		String choice;
+//
+//		System.out.println("the default for number of programs is 3,do you want to change it? (y/n) ");
+//		choice = sc.nextLine();
+//
+//		if (choice.equals("y")) {
+//			System.out.println("please enter your number of programs");
+//			processCount = sc.nextInt();
+//			sc.nextLine();
+//		}
+//
+//		System.out.println("the default time slice is 2,do you want to change it? (y/n) ");
+//		choice = sc.nextLine();
+//		if (choice.equals("y")) {
+//			System.out.println("please enter your time slice");
+//			timeSlice = sc.nextInt();
+//			sc.nextLine();
+//		}
+//
+//		String path;
+//		int timeOfArrival;
+//		for (int i = 1; i <= processCount; i++) {
+//			System.out.println("please enter the file path of process " + i + " and its time of arrival");
+//			System.out.println("path :- ");
+//			path = sc.nextLine();
+//			System.out.println();
+//			System.out.println("time of arrival :- ");
+//			timeOfArrival = sc.nextInt();
+//			sc.nextLine();
+//			System.out.println();
+//
+//			createProcess(path, timeOfArrival, i, timeSlice);
+//			
+//		}
+		createProcess("Program_1.txt", 0, 1, 2);
+		createProcess("Program_2.txt", 1, 2, 2);
+		createProcess("Program_2.txt", 4, 3, 2);
 
-		System.out.println("the default for number of programs is 3,do you want to change it? (y/n) ");
-		choice = sc.nextLine();
-
-		if (choice.equals("y")) {
-			System.out.println("please enter your number of programs");
-			processCount = sc.nextInt();
-			sc.nextLine();
-		}
-
-		System.out.println("the default time slice is 2,do you want to change it? (y/n) ");
-		choice = sc.nextLine();
-		if (choice.equals("y")) {
-			System.out.println("please enter your time slice");
-			timeSlice = sc.nextInt();
-			sc.nextLine();
-		}
-
-		String path;
-		int timeOfArrival;
-		for (int i = 1; i <= processCount; i++) {
-			System.out.println("please enter the file path of process " + i + " and its time of arrival");
-			System.out.println("path :- ");
-			path = sc.nextLine();
-			System.out.println();
-			System.out.println("time of arrival :- ");
-			timeOfArrival = sc.nextInt();
-			sc.nextLine();
-			System.out.println();
-
-			createProcess(path, timeOfArrival, i, timeSlice);
-		}
 	}
 
 	public void run() {
 		int startAddress;
 		while (!(readyQueue.isEmpty() && pendingList.isEmpty() && executingPid == -1)) {
+			System.out.println(executingPid);
 			startAddress = scheduler.schedule(this);
+
 //			for (int i = 0; i < pendingList.size(); i++) {
 //				if (pendingList.get(i).getTimeOfArrival() == clock) {
 //					readyQueue.add(pendingList.get(i).getPid());
@@ -102,37 +108,63 @@ public class OS {
 				int quantum = timeSlice;
 				String[] currentInstruction;
 				int realPC;
-				while (quantum > 0
-						&& (int) memory[startAddress + 2].getValue() <= (int) memory[startAddress + 4].getValue()) {
-					
+				System.out.println(startAddress);
+				while (quantum > 0 && memory[startAddress] != null && Integer.parseInt((String) memory[startAddress + 2].getValue()) <= (Integer
+						.parseInt((String) memory[startAddress + 4].getValue()) - 8 - startAddress)) {
+
 					System.out.println("Clock cycle:- " + clock);
-					realPC = startAddress + 8 + (int) memory[startAddress + 2].getValue();
+
+					for (int i = 0; i < pendingList.size(); i++) {
+						if (pendingList.get(i).getTimeOfArrival() == clock) {
+							readyQueue.add(pendingList.get(i).getPid());
+							createInMemory(pendingList.get(i));
+						}
+					}
+
+					realPC = startAddress + 8 + Integer.parseInt((String) memory[startAddress + 2].getValue());
+//					System.out.println(realPC);
 					currentInstruction = ((String) memory[realPC].getValue()).split(" ");
-					System.out.println("Currently executing instruction " + memory[startAddress + 2].getValue() + " :"
-							+ String.join(" ", currentInstruction));
-					
-					
+					System.out.println("Currently executing " + String.join(" ", currentInstruction));
+
 					if (currentInstruction[0].equals("assign")) {
 						for (int i = startAddress + 5; i < startAddress + 8; i++) {
 							if (memory[i].getValue().equals("<empty variable slot>")) {
-								memory[i].setKey(currentInstruction[1]+ " : ");
+								memory[i].setKey(currentInstruction[1] + " : ");
 								memory[i].setValue("Dummy value");
 								break;
 							}
 						}
 					}
-					
-					
+					memory[startAddress + 1].setValue("running on memory");
+
 					memory[startAddress + 2].increment();
+					if (Integer.parseInt((String) memory[startAddress + 2].getValue()) > (Integer.parseInt((String) memory[startAddress + 4].getValue()) - 8 - startAddress)) {
+						executingPid = -1;
+						System.out.println(executingPid);
+						int end = (Integer.parseInt((String) memory[startAddress + 4].getValue()));
+						for (int i = startAddress; i <= end ; i++) {
+							memory[i] = null;
+						}
+					}
 					clock++;
 					quantum--;
-					System.out.println("--------------------------------------");
+
+					System.out.println("--------------------------------------------------");
 					System.out.println("MEMORY CONTENT");
 					for (int i = 0; i < memory.length; i++) {
-						
-						
-						System.out.println("memory[" + i + "] = " + memory[i].getKey() + memory[i].getValue());
+						if (memory[i] == null) {
+							System.out.println("memory[" + i + "] = no data ");
+						} else {
+							System.out.println("memory[" + i + "] = " + memory[i].getKey() + memory[i].getValue());
+						}
 					}
+					System.out.println("--------------------------------------------------");
+
+					if(memory[0] != null )
+						memory[1].setValue("ready on memory");
+					if (memory[21] != null)
+						memory[21].setValue("ready on memory");
+
 				}
 //				StringBuffer sb = new StringBuffer(executingProcess.getName());
 //				sb.deleteCharAt(sb.length() - 1);
@@ -164,8 +196,21 @@ public class OS {
 //				}
 			} else {
 				System.out.println("No process currently executing");
+				System.out.println("--------------------------------------------------");
+				System.out.println("MEMORY CONTENT");
+				for (int i = 0; i < memory.length; i++) {
+					if (memory[i] == null) {
+						System.out.println("memory[" + i + "] = no data ");
+					} else {
+						System.out.println("memory[" + i + "] = " + memory[i].getKey() + memory[i].getValue());
+					}
+				}
+				System.out.println("--------------------------------------------------");
+
+				memory[1].setValue("ready on memory");
+				if (memory[21] != null)
+					memory[21].setValue("ready on memory");
 			}
-			System.out.println("--------------------------------------------------");
 		}
 	}
 
@@ -212,14 +257,15 @@ public class OS {
 	}
 
 	public void createInMemoryHelper(int start, process process) {
-		memory[start] = new pair("PID : ", process.getPid());
+		memory[start] = new pair("PID : ", Integer.toString(process.getPid()));
 		memory[start + 1] = new pair("process state : ", "ready on memory");
-		memory[start + 2] = new pair("PC : ", process.getPc());
-		memory[start + 3] = new pair("starts at address : ", 0);
-		memory[start + 4] = new pair("ends at address : ", (start + 7 + process.getInstructions().size()));
-		memory[start + 5] = new pair("<empty variable slot> ", "");
-		memory[start + 6] = new pair("<empty variable slot> ", "");
-		memory[start + 7] = new pair("<empty variable slot> ", "");
+		memory[start + 2] = new pair("PC : ", Integer.toString(process.getPc()));
+		memory[start + 3] = new pair("starts at address : ", start);
+		memory[start + 4] = new pair("ends at address : ",
+				Integer.toString((process.getInstructions().size() + start + 7)));
+		memory[start + 5] = new pair("<empty variable slot> : ", "no value");
+		memory[start + 6] = new pair("<empty variable slot> : ", "no value");
+		memory[start + 7] = new pair("<empty variable slot> : ", "no value");
 		for (int i = 0; i < process.getInstructions().size(); i++) {
 			memory[start + 8 + i] = new pair("instruction " + i + " : ",
 					String.join(" ", process.getInstructions().get(i)));
@@ -250,10 +296,25 @@ public class OS {
 				String line;
 
 				while ((line = bufferedReader.readLine()) != null) {
-					memory[j] = new pair(line.split(": ")[0], line.split(": ")[1]);
+					
+						memory[j] = new pair(line.split(": ")[0] + " : ", line.split(": ")[1]);
+					
+						
+					
+
+					if (j == 3)
+						memory[j].setValue(Integer.toString(0));
+					if (j == 23)
+						memory[j].setValue(Integer.toString(20));
+
+					if (j == 4)
+						memory[j].setValue(Integer.toString(Integer.parseInt((String) memory[j].getValue()) % 20));
+					if (j == 24)
+						memory[j].setValue(Integer.toString(Integer.parseInt((String) memory[j].getValue()) % 20 + 20));
 					if (j == 1 || j == 21) {
 						memory[j].setValue("ready on memory");
 					}
+					j++;
 				}
 				System.out.println("Process id " + memory[start].getValue() + " is swapped to memory");
 			}
