@@ -35,7 +35,6 @@ public class OS {
 
 	public OS() {
 		initialize();
-
 		run();
 	}
 
@@ -83,40 +82,53 @@ public class OS {
 	}
 
 	public void run() {
-		while (!(readyQueue.isEmpty() && blockedQueue.isEmpty() && pendingList.isEmpty() && executingProcess == null)) {
+		while (!(readyQueue.isEmpty() && pendingList.isEmpty() && executingPid == -1)) {
 			System.out.println("clock :- " + clock);
-			executingProcess = scheduler.schedule(this, timeSlice, readyQueue, blockedQueue, pendingList,
-					executingProcess);
-			if (executingProcess != null) {
-
-				StringBuffer sb = new StringBuffer(executingProcess.getName());
-				sb.deleteCharAt(sb.length() - 1);
-				sb.deleteCharAt(sb.length() - 1);
-				sb.deleteCharAt(sb.length() - 1);
-				sb.deleteCharAt(sb.length() - 1);
-
-				System.out.println("currently executing process :-  " + sb);
-				System.out.println("currently executing instruction :-  "
-						+ String.join(" ", executingProcess.getInstructions().get(executingProcess.getPc())));
-				executeInstruction(executingProcess.getInstructions().get(executingProcess.getPc()));
-				if (executingProcess != null && executingProcess.getPc() == executingProcess.getInstructions().size()) {
-					System.out.println("process finished");
-					System.out.print("ready queue :- ");
-					for (process p : readyQueue) {
-						System.out.print(p.getName() + ", ");
-					}
-					System.out.println();
-					System.out.print("blocked queue :- ");
-					for (process p : blockedQueue) {
-						System.out.print(p.getName() + ", ");
-					}
-					System.out.println();
-					System.out.println("pending list  :- ");
-					for (process p : pendingList) {
-						System.out.println(p.getName() + " ");
-					}
-					System.out.println();
+			
+			for (int i = 0; i < pendingList.size(); i++) {
+				if (pendingList.get(i).getTimeOfArrival() == clock) {
+					readyQueue.add(pendingList.get(i).getPid());
+					createInMemory(pendingList.get(i));
 				}
+			}
+			
+			if (!readyQueue.isEmpty()) {
+				if (executingPid != -1) {
+					readyQueue.add(executingPid);
+				}
+				executingPid = readyQueue.remove();
+			}
+			if (executingPid != -1) {
+
+//				
+//				StringBuffer sb = new StringBuffer(executingProcess.getName());
+//				sb.deleteCharAt(sb.length() - 1);
+//				sb.deleteCharAt(sb.length() - 1);
+//				sb.deleteCharAt(sb.length() - 1);
+//				sb.deleteCharAt(sb.length() - 1);
+//
+//				System.out.println("currently executing process :-  " + sb);
+//				System.out.println("currently executing instruction :-  "
+//						+ String.join(" ", executingProcess.getInstructions().get(executingProcess.getPc())));
+//				executeInstruction(executingProcess.getInstructions().get(executingProcess.getPc()));
+//				if (executingProcess != null && executingProcess.getPc() == executingProcess.getInstructions().size()) {
+//					System.out.println("process finished");
+//					System.out.print("ready queue :- ");
+//					for (process p : readyQueue) {
+//						System.out.print(p.getName() + ", ");
+//					}
+//					System.out.println();
+//					System.out.print("blocked queue :- ");
+//					for (process p : blockedQueue) {
+//						System.out.print(p.getName() + ", ");
+//					}
+//					System.out.println();
+//					System.out.println("pending list  :- ");
+//					for (process p : pendingList) {
+//						System.out.println(p.getName() + " ");
+//					}
+//					System.out.println();
+//				}
 			} else {
 				System.out.println("No process currently executing");
 			}
@@ -167,8 +179,11 @@ public class OS {
 		memory[start + 2] = new pair("PC : ", process.getPc());
 		memory[start + 3] = new pair("starts at address : ", 0);
 		memory[start + 4] = new pair("ends at address : ", (start + 7 + process.getInstructions().size()));
+		memory[start + 5] = new pair("<empty variable slot>", "");
+		memory[start + 6] = new pair("<empty variable slot>", "");
+		memory[start + 7] = new pair("<empty variable slot>", "");
 		for (int i = 0; i < process.getInstructions().size(); i++) {
-			memory[start + 5 + i] = new pair("instruction " + i + " : ",
+			memory[start + 8 + i] = new pair("instruction " + i + " : ",
 					String.join(" ", process.getInstructions().get(i)));
 		}
 	}
@@ -178,7 +193,10 @@ public class OS {
 			String swappedProcess = "";
 			int i = start;
 			// putting the memory block in a string to write it on disk later
-			while (memory[i] != null) {
+			while (memory[i] != null && i<20) {
+				if (i == 1 || i == 21) {
+					memory[i].setValue("ready on disk");
+				}
 				swappedProcess += memory[i].getKey() + memory[i].getValue() + "\n";
 				memory[i] = null;
 				i++;
@@ -193,6 +211,9 @@ public class OS {
 
 				while ((line = bufferedReader.readLine()) != null) {
 					memory[j] = new pair(line.split(": ")[0], line.split(": ")[1]);
+					if (j == 1 || j == 21) {
+						memory[j].setValue("ready on memory");
+					}
 				}
 			}
 
